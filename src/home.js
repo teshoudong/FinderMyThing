@@ -74,10 +74,10 @@ class Home extends React.Component {
         };
     }
 
-    handleClickImage(item, image) {
+    handleClickImage(item, index) {
         this.props.navigation.navigate('Detail', {
-            title: item.title,
-            image
+            item,
+            index
         });
     }
 
@@ -97,7 +97,7 @@ class Home extends React.Component {
                     {
                         item.images.map((image, index) => {
                             return (
-                                <TouchableHighlight key={index} style={styles.itemImageContainer} onPress={() => this.handleClickImage(item, image)}>
+                                <TouchableHighlight key={index} style={styles.itemImageContainer} onPress={() => this.handleClickImage(item, index)}>
                                     <Image resizeMode="cover" style={{ width: imageSize, height: imageSize }} source={{uri: image.url}}/>
                                 </TouchableHighlight>
                             );

@@ -1,31 +1,47 @@
 import React from 'react';
 import { Text, View, Image, StyleSheet } from 'react-native';
+import Swiper from 'react-native-swiper';
 
 export default class Detail extends React.Component {
     static navigationOptions = ({ navigation }) => {
+        const item = navigation.getParam('item', {
+            title: ''
+        });
+        
         return {
-            title: navigation.getParam('title', '')
+            headerTitle: item.title
         };
     }
 
     render() {
-        const image = this.props.navigation.getParam('image', {});
+        const item = this.props.navigation.getParam('item', {
+             images: []
+        });
+        const index = this.props.navigation.getParam('index', 0);
 
         return (
-            <View style={styles.container}>
-                <Image resizeMode="contain" style={styles.image} source={{uri: image.url}}/>
-                {image.points.map((point, index) => {
-                    return (
-                        <View style={[styles.point, { top: point.top, left: point.left }]} key={index}>
-                            <View style={styles.pointReact}></View>
-                            <View style={styles.pointTitleContainer}>
-                                <View style={styles.pointArrow}></View>
-                                <Text style={styles.pointTitle}>测试</Text>
+            <Swiper loop={false} index={index} showsPagination={false}>
+                {
+                    item.images.map((image, index) => {
+                        return (
+                            <View style={styles.container} key={index}>
+                                <Image resizeMode="contain" style={styles.image} source={{uri: image.url}}/>
+                                {image.points.map((point, index) => {
+                                    return (
+                                        <View style={[styles.point, { top: point.top, left: point.left }]} key={index}>
+                                            <View style={styles.pointReact}></View>
+                                            <View style={styles.pointTitleContainer}>
+                                                <View style={styles.pointArrow}></View>
+                                                <Text style={styles.pointTitle}>测试</Text>
+                                            </View>
+                                        </View>
+                                    );
+                                })}
                             </View>
-                        </View>
-                    );
-                })}
-            </View>
+                        );
+                    })
+                }
+            </Swiper>
         );
     }
 }
