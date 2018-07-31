@@ -1,9 +1,10 @@
 import React from 'react';
-import { Text, View, Image, TouchableHighlight, TouchableOpacity, FlatList, ScrollView, StyleSheet, Dimensions } from 'react-native';
+import { Text, TextInput, View, Image, TouchableHighlight, TouchableOpacity, FlatList, ScrollView, StyleSheet, Dimensions } from 'react-native';
 import Navigation from 'react-navigation';
-import Icon from 'react-native-vector-icons/Ionicons';
 import Detail from './detail';
-import Add from './add';
+import AddItem from './addItem';
+import AddPoint from './addPoint';
+import Icon from 'react-native-vector-icons/Ionicons';
 
 class Home extends React.Component {
     constructor(props) {
@@ -81,6 +82,10 @@ class Home extends React.Component {
         });
     }
 
+    handleSearch() {
+        
+    }
+
     keyExtractor(item) {
         return item.id;
     }
@@ -113,22 +118,16 @@ class Home extends React.Component {
 
         return (
             <ScrollView style={styles.container}>
+                <View style={styles.search}>
+                    <Icon style={styles.searchIcon} name="md-search"/>
+                    <TextInput 
+                        style={styles.searchInput}
+                        placeholder="请输入搜索内容"
+                        underlineColorAndroid="transparent"
+                        onChangeText={text => this.handleSearch(text)}/>
+                </View>
                 <FlatList style={styles.list} data={list} keyExtractor={this.keyExtractor} renderItem={data => this.renderItem(data)}/>
             </ScrollView>
-        );
-    }
-}
-
-class AddButton extends React.Component {
-    handleAdd() {
-        this.props.navigation.navigate('Add');
-    }
-
-    render() {
-        return (
-            <TouchableOpacity style={styles.button} onPress={() => this.handleAdd()}>
-                <Icon style={styles.buttonIcon} name="md-add"/>
-            </TouchableOpacity>
         );
     }
 }
@@ -140,7 +139,7 @@ const Nav = Navigation.createStackNavigator({
             return {
                 headerStyle: styles.header,
                 headerTitleStyle: styles.headerTitle,
-                headerRight: <AddButton navigation={navigation}/>
+                headerRight: <AddItem.Button navigation={navigation}/>
             };
         }
     },
@@ -155,7 +154,18 @@ const Nav = Navigation.createStackNavigator({
         }
     },
     Add: {
-        screen: Add,
+        screen: AddItem,
+        navigationOptions: ({ navigation }) => {
+            return {
+                headerStyle: styles.header,
+                headerTitleStyle: styles.headerTitle,
+                headerTintColor: '#0B152C',
+                headerRight: <AddPoint.Button navigation={navigation}/>
+            };
+        }
+    },
+    Point: {
+        screen: AddPoint,
         navigationOptions: () => {
             return {
                 headerStyle: styles.header,
@@ -180,6 +190,25 @@ const styles = StyleSheet.create({
     list: {
         flex: 1
     },
+    search: {
+        padding: 10
+    },
+    searchIcon: {
+        position: 'absolute',
+        top: 20,
+        left: 20,
+        fontSize: 18,
+        zIndex: 1,
+        color: '#CBCBCF'
+    },
+    searchInput: {
+        backgroundColor: '#F2F2F2',
+        height: 40,
+        borderRadius: 4,
+        fontSize: 12,
+        paddingLeft: 30,
+        paddingRight: 10
+    },
     item: {
         backgroundColor: '#FFFFFF',
         paddingTop: 10,
@@ -201,15 +230,6 @@ const styles = StyleSheet.create({
     itemImageContainer: {
         marginRight: 2,
         marginBottom: 2
-    },
-    button: {
-        marginRight: 10,
-        alignItems: 'center',
-        justifyContent: 'center'
-    },
-    buttonIcon: {
-        fontSize: 30,
-        color: '#0B152C'
     }
 });
 
