@@ -4,75 +4,41 @@ import Navigation from 'react-navigation';
 import Detail from './detail';
 import AddItem from './addItem';
 import AddPoint from './addPoint';
+import storage from './storage';
 import Icon from 'react-native-vector-icons/Ionicons';
+import PubSub from 'pubsub-js';
+import fuzzy from 'fuzzy';
 
 class Home extends React.Component {
     constructor(props) {
         super(props);
 
         this.state = {
-            list: [
-                {
-                    id: '123456',
-                    title: '客厅',
-                    images: [
-                        {
-                            url: 'https://raw.githubusercontent.com/akveo/react-native-ui-kitten/master/example/img/post2.png',
-                            points: [
-                                {
-                                    top: 100,
-                                    left: 200,
-                                    title: '测试1'
-                                },
-                                {
-                                    top: 300,
-                                    left: 300,
-                                    title: '测试2'
-                                }
-                            ]
-                        },
-                        {
-                            url: 'https://raw.githubusercontent.com/akveo/react-native-ui-kitten/master/example/img/post2.png',
-                            points: []
-                        },
-                        {
-                            url: 'https://raw.githubusercontent.com/akveo/react-native-ui-kitten/master/example/img/post2.png',
-                            points: []
-                        },
-                        {
-                            url: 'https://raw.githubusercontent.com/akveo/react-native-ui-kitten/master/example/img/post2.png',
-                            points: []
-                        },
-                        {
-                            url: 'https://raw.githubusercontent.com/akveo/react-native-ui-kitten/master/example/img/post2.png',
-                            points: []
-                        },
-                        {
-                            url: 'https://raw.githubusercontent.com/akveo/react-native-ui-kitten/master/example/img/post2.png',
-                            points: []
-                        },
-                        {
-                            url: 'https://raw.githubusercontent.com/akveo/react-native-ui-kitten/master/example/img/post2.png',
-                            points: []
-                        }
-                    ]
-                },
-                {
-                    id: '1234',
-                    title: '主卧',
-                    images: [
-                        {
-                            url: 'https://raw.githubusercontent.com/akveo/react-native-ui-kitten/master/example/img/post2.png',
-                            points: []
-                        },
-                        {
-                            url: 'https://raw.githubusercontent.com/akveo/react-native-ui-kitten/master/example/img/post2.png',
-                            points: []
-                        }
-                    ]
-                }
-            ]
+            list: []
         };
+
+        this.getList();
+        this.subUpdateList();
+    }
+
+    subUpdateList() {
+        PubSub.subscribe('updateList', () => {
+            this.getList();
+        });
+    }
+
+    getList() {
+        storage.load({
+            key: 'list'
+        }).then(list => {
+            list = list || [];
+            this.list = list;
+            this.setState({
+                list
+            });
+        }).catch(err => {
+            console.log(err.message);
+        });
     }
 
     handleClickImage(item, index) {
@@ -82,8 +48,27 @@ class Home extends React.Component {
         });
     }
 
-    handleSearch() {
-        
+    handleSearch(text) {
+        const list = this.list;
+        const result = fuzzy.filter(text, list, {
+            extract: el => {
+                let content = '';
+                if (el.images && el.images.length > 0) {
+                    content = el.images.map(image => {
+                        if (image.points && image.points.length > 0) {
+                            image.points.map(point => point.title).join(' ');
+                        } else {
+                            return '';
+                        }
+                    }).join('');
+                }
+                return `${el.title} ${content}`;
+            }
+        }).map(item => item.original);
+
+        this.setState({
+            list: result
+        });
     }
 
     keyExtractor(item) {
@@ -132,6 +117,20 @@ class Home extends React.Component {
     }
 }
 
+class Button extends React.Component {
+    handleAdd() {
+        this.props.navigation.navigate('Add');
+    }
+
+    render() {
+        return (
+            <TouchableOpacity style={styles.button} onPress={() => this.handleAdd()}>
+                <Icon style={styles.buttonIcon} name="md-add"/>
+            </TouchableOpacity>
+        );
+    }
+}
+
 const Nav = Navigation.createStackNavigator({
     Main: {
         screen: Home,
@@ -139,7 +138,7 @@ const Nav = Navigation.createStackNavigator({
             return {
                 headerStyle: styles.header,
                 headerTitleStyle: styles.headerTitle,
-                headerRight: <AddItem.Button navigation={navigation}/>
+                headerRight: <Button navigation={navigation}/>
             };
         }
     },
@@ -160,17 +159,18 @@ const Nav = Navigation.createStackNavigator({
                 headerStyle: styles.header,
                 headerTitleStyle: styles.headerTitle,
                 headerTintColor: '#0B152C',
-                headerRight: <AddPoint.Button navigation={navigation}/>
+                headerRight: <AddItem.Button navigation={navigation}/>
             };
         }
     },
     Point: {
         screen: AddPoint,
-        navigationOptions: () => {
+        navigationOptions: ({ navigation }) => {
             return {
                 headerStyle: styles.header,
                 headerTitleStyle: styles.headerTitle,
-                headerTintColor: '#0B152C'
+                headerTintColor: '#0B152C',
+                headerRight: <AddPoint.Button navigation={navigation}/>
             };
         }
     }
@@ -230,6 +230,15 @@ const styles = StyleSheet.create({
     itemImageContainer: {
         marginRight: 2,
         marginBottom: 2
+    },
+    button: {
+        marginRight: 10,
+        alignItems: 'center',
+        justifyContent: 'center'
+    },
+    buttonIcon: {
+        fontSize: 30,
+        color: '#0B152C'
     }
 });
 

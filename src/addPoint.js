@@ -1,7 +1,9 @@
 import React from 'react';
-import { Text, View, TouchableOpacity, StyleSheet, Image, Alert, TouchableWithoutFeedback, AlertIOS, Animated, Easing } from 'react-native';
+import { Text, View, TouchableOpacity, StyleSheet, Image, Alert, TouchableWithoutFeedback, AlertIOS } from 'react-native';
 import Swiper from 'react-native-swiper';
 import Point from './components/point';
+import storage from './storage';
+import PubSub from 'pubsub-js';
 
 class AddPoint extends React.Component {
     static navigationOptions = ({ navigation }) => {
@@ -25,6 +27,8 @@ class AddPoint extends React.Component {
                 };
             })
         };
+
+        global.images = this.state.images;
     }
 
     handleAddPoint(e, imageIndex) {
@@ -37,18 +41,22 @@ class AddPoint extends React.Component {
             text => {
                 const { images } = this.state;
 
-                this.setState({
-                    images: images.map((image, index) => {
-                        if (imageIndex === index) {
-                            image.points.push({
-                                top,
-                                left,
-                                title: text
-                            });
-                        }
-                        return image;
-                    })
+                const updatedImages = images.map((image, index) => {
+                    if (imageIndex === index) {
+                        image.points.push({
+                            top,
+                            left,
+                            title: text
+                        });
+                    }
+                    return image;
                 });
+
+                this.setState({
+                    images: updatedImages
+                });
+
+                global.images = updatedImages;
             }
         );
     }
@@ -62,14 +70,18 @@ class AddPoint extends React.Component {
                 {text: '确定', onPress: () => {
                     const { images } = this.state;
 
-                    this.setState({
-                        images: images.map((image, index) => {
-                            if (imageIndex === index) {
-                                image.points.splice(pointIndex, 1);
-                            }
-                            return image;
-                        })
+                    const updatedImages = images.map((image, index) => {
+                        if (imageIndex === index) {
+                            image.points.splice(pointIndex, 1);
+                        }
+                        return image;
                     });
+
+                    this.setState({
+                        images: updatedImages
+                    });
+
+                    global.images = updatedImages;
                 }}
             ]
         )
@@ -102,27 +114,43 @@ class AddPoint extends React.Component {
 }
 
 class Button extends React.Component {
-    handlePoint() {
+    handleFinish() {
         const title = this.props.navigation.getParam('title', '');
-        const images = this.props.navigation.getParam('images', []);
-        if (!title) {
-            Alert.alert('提示', '请填写标题');
-            return;
+        const images = global.images || [];
+
+        const saveList = list => {
+            list = list || [];
+            list.push({
+                id: (+new Date()) + '',
+                title,
+                images
+            });
+            storage.save({
+                key: 'list',
+                expires: null,
+                data: list
+            });
+            this.props.navigation.navigate('Main');
+            PubSub.publish('updateList');
         }
-        if (images.length <= 0) {
-            Alert.alert('提示', '请填添加一张图片');
-            return;
-        }
-        this.props.navigation.navigate('Point', {
-            title,
-            images
+
+        storage.load({
+            key: 'list'
+        }).then(list => {
+            saveList(list);
+        }).catch(err => {
+            if (err.name === 'NotFoundError') {
+                saveList();
+            } else {
+                console.log(err.message);
+            }
         });
     }
 
     render() {
         return (
-            <TouchableOpacity style={styles.button} onPress={() => this.handlePoint()}>
-                <Text style={styles.buttonText}>继续</Text>
+            <TouchableOpacity style={styles.button} onPress={() => this.handleFinish()}>
+                <Text style={styles.buttonText}>完成</Text>
             </TouchableOpacity>
         );
     }

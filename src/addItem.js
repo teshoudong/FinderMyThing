@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, TextInput, Dimensions, TouchableOpacity, Image, Alert } from 'react-native';
+import { View, Text, StyleSheet, TextInput, Dimensions, TouchableOpacity, Image, Alert } from 'react-native';
 import ImagePicker from 'react-native-image-picker';
 import Icon from 'react-native-vector-icons/Ionicons';
 
@@ -94,14 +94,27 @@ class AddItem extends React.Component {
 }
 
 class Button extends React.Component {
-    handleAdd() {
-        this.props.navigation.navigate('Add');
+    handlePoint() {
+        const title = this.props.navigation.getParam('title', '');
+        const images = this.props.navigation.getParam('images', []);
+        if (!title) {
+            Alert.alert('提示', '请填写标题');
+            return;
+        }
+        if (images.length <= 0) {
+            Alert.alert('提示', '请填添加一张图片');
+            return;
+        }
+        this.props.navigation.navigate('Point', {
+            title,
+            images
+        });
     }
 
     render() {
         return (
-            <TouchableOpacity style={styles.button} onPress={() => this.handleAdd()}>
-                <Icon style={styles.buttonIcon} name="md-add"/>
+            <TouchableOpacity style={styles.button} onPress={() => this.handlePoint()}>
+                <Text style={styles.buttonText}>继续</Text>
             </TouchableOpacity>
         );
     }
@@ -165,10 +178,10 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center'
     },
-    buttonIcon: {
-        fontSize: 30,
+    buttonText: {
+        fontSize: 14,
         color: '#0B152C'
-    }
+    },
 });
 
 export default AddItem;
